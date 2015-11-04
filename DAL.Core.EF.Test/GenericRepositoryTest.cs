@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Entity;
 using System.Linq;
+using System.Linq.Expressions;
 using DAL.Core.Interfaces;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
@@ -74,6 +75,89 @@ namespace DAL.Core.EF.Test
             Assert.AreEqual(10, results.Count());
             Assert.AreEqual(1, results.First().Id);
         }
+
+        [TestMethod]
+        public void Get_With_Filter_Must_Return__Filtered_Results()
+        {
+            //
+            // Arrange
+            //
+            var models = Enumerable.Range(1, 10).Select(x =>
+            {
+                var mockModel = new Mock<IModel>();
+                mockModel.Setup(y => y.Id).Returns(x);
+
+                return mockModel.Object;
+
+            }).AsQueryable();
+
+            var mockDbSet = new Mock<DbSet<IModel>>();
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.Provider).Returns(models.Provider);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.Expression).Returns(models.Expression);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.ElementType).Returns(models.ElementType);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.GetEnumerator()).Returns(models.GetEnumerator());
+
+            var mockContext = new Mock<EFDbContext>();
+
+            mockContext.Setup(x => x.Set<IModel>()).Returns(mockDbSet.Object);
+
+            var repository = new GenericRepository<IModel>(mockContext.Object);
+
+            Expression<Func<IModel, bool>> filterExpression = x => x.Id == 1;
+            //
+            // Act
+            //
+            var results = repository.Get(filterExpression);
+            //
+            // Assert
+            //
+            Assert.IsNotNull(results);
+            Assert.IsNotNull(results.First());
+            Assert.AreEqual(1, results.Count());
+            Assert.AreEqual(1, results.First().Id);
+        }
+
+        [TestMethod]
+        public void Get_With_NULL_Filter_Must_Return__All()
+        {
+            //
+            // Arrange
+            //
+            var models = Enumerable.Range(1, 10).Select(x =>
+            {
+                var mockModel = new Mock<IModel>();
+                mockModel.Setup(y => y.Id).Returns(x);
+
+                return mockModel.Object;
+
+            }).AsQueryable();
+
+            var mockDbSet = new Mock<DbSet<IModel>>();
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.Provider).Returns(models.Provider);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.Expression).Returns(models.Expression);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.ElementType).Returns(models.ElementType);
+            mockDbSet.As<IQueryable<IModel>>().Setup(m => m.GetEnumerator()).Returns(models.GetEnumerator());
+
+            var mockContext = new Mock<EFDbContext>();
+
+            mockContext.Setup(x => x.Set<IModel>()).Returns(mockDbSet.Object);
+
+            var repository = new GenericRepository<IModel>(mockContext.Object);
+
+            Expression<Func<IModel, bool>> filterExpression = null;
+            //
+            // Act
+            //
+            var results = repository.Get(filterExpression);
+            //
+            // Assert
+            //
+            Assert.IsNotNull(results);
+            Assert.IsNotNull(results.First());
+            Assert.AreEqual(10, results.Count());
+            Assert.AreEqual(1, results.First().Id);
+        }
+
 
         [TestMethod]
         public void Add_Valid_Object_Must_Add()

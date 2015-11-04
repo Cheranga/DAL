@@ -109,7 +109,7 @@ namespace DAL.Core.EF
 
         public virtual IQueryable<T> Get(Expression<Func<T, bool>> filter)
         {
-            return filter == null ? null : this.dbSet.Where(filter).AsQueryable();
+            return filter == null ? GetAll() : this.dbSet.Where(filter).AsQueryable();
         }
 
         #endregion
